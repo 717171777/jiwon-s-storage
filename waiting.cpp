@@ -5,11 +5,8 @@
 #include <algorithm>
 
 int findBenchIndex(const std::vector<std::vector<int>>& waitroom, int p) {
-    if (waitroom.empty() || (waitroom.size() == 1 && waitroom[0].empty())) {
-        return 0;
-    }
-    int target_idx = -1;
-    int predecessor = -1;
+    if (waitroom.empty() || (waitroom.size() == 1 && waitroom[0].empty())) return 0;
+    int target_idx = -1, predecessor = -1;
     for (int i = 0; i < waitroom.size(); ++i) {
         for (int num : waitroom[i]) {
             if (num < p && num > predecessor) {
@@ -19,8 +16,7 @@ int findBenchIndex(const std::vector<std::vector<int>>& waitroom, int p) {
         }
     }
     if (target_idx != -1) return target_idx;
-    int successor = -1;
-    int successor_bench_idx = -1;
+    int successor = -1, successor_bench_idx = -1;
     for (int i = 0; i < waitroom.size(); ++i) {
         for (int num : waitroom[i]) {
             if (num > p) {
@@ -51,55 +47,34 @@ int main() {
         std::cin >> command >> p;
 
         if (command == '+') {
-            if (waitroom.empty()) {
-                waitroom.push_back({});
-            }
+            if (waitroom.empty()) waitroom.push_back({});
+            
             int bench_idx = findBenchIndex(waitroom, p);
-            if (waitroom.size() == 1 && waitroom[0].empty()) {
-                bench_idx = 0;
-            }
             auto& target_bench = waitroom[bench_idx];
 
             if (target_bench.size() >= max_capacity_before_split) {
                 std::vector<int> temp_bench = target_bench;
-                auto it = std::lower_bound(temp_bench.begin(), temp_bench.end(), p);
-                temp_bench.insert(it, p);
-
-                std::vector<int> new_bench1, new_bench2;
-
-                for (int j = 0; j < k; ++j) {
-                    new_bench1.push_back(temp_bench[j]);
-                }
-                for (int j = 0; j < k; ++j) {
-                    new_bench2.push_back(temp_bench[k + j]);
-                }
+                temp_bench.insert(std::lower_bound(temp_bench.begin(), temp_bench.end(), p), p);
+                
+                std::vector<int> new_bench1(temp_bench.begin(), temp_bench.begin() + k);
+                std::vector<int> new_bench2(temp_bench.begin() + k, temp_bench.end());
                 
                 waitroom[bench_idx] = new_bench1;
                 waitroom.insert(waitroom.begin() + bench_idx + 1, new_bench2);
-
             } else {
-                auto it = std::lower_bound(target_bench.begin(), target_bench.end(), p);
-                target_bench.insert(it, p);
+                target_bench.insert(std::lower_bound(target_bench.begin(), target_bench.end(), p), p);
             }
         } 
         else if (command == '-') {
-            bool found = false;
-            for (size_t bench_idx = 0; bench_idx < waitroom.size(); ++bench_idx) {
-                for (size_t person_idx = 0; person_idx < waitroom[bench_idx].size(); ++person_idx) {
-                    if (waitroom[bench_idx][person_idx] == p) {
-                        waitroom[bench_idx].erase(waitroom[bench_idx].begin() + person_idx);
-                        
-                        if (waitroom[bench_idx].empty()) {
-                            waitroom.erase(waitroom.begin() + bench_idx);
-                        }
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) {
-                    break;
+            for (auto& bench : waitroom) {
+                auto it = std::find(bench.begin(), bench.end(), p);
+                if (it != bench.end()) {
+                    bench.erase(it);
+                    break; 
                 }
             }
+            waitroom.erase(std::remove_if(waitroom.begin(), waitroom.end(), 
+                [](const auto& v){ return v.empty(); }), waitroom.end());
         }
     }
 
@@ -108,6 +83,5 @@ int main() {
             std::cout << bench[0] << "\n";
         }
     }
-
     return 0;
 }
